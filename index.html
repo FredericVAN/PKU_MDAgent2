@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoDResearch: Deep Research on Private Heterogeneous Data via the Internet of Data</title>
+    <title>MDAgent2: Large Language Model for Code Generation and Knowledge Q&A in Molecular Dynamics</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,7 +17,7 @@
                 <a href="#features">特性</a>
                 <a href="#citation">引用</a>
             </div>
-            <a href="https://arxiv.org/abs/2510.01553" class="nav-paper" target="_blank">论文</a>
+            <a href="https://arxiv.org/abs/2601.02075" class="nav-paper" target="_blank">论文</a>
         </div>
     </nav>
 
@@ -25,27 +25,35 @@
     <section class="hero">
         <div class="hero-container">
             <h1 class="hero-title">
-                <span class="emoji">🔬</span>
-                IoDResearch
+                <span class="emoji">⚛️</span>
+                MDAgent2
             </h1>
-            <p class="hero-subtitle">基于数据互联网的私有异构数据深度研究框架</p>
+            <p class="hero-subtitle">用于分子动力学代码生成与知识问答的大语言模型</p>
             <p class="hero-description">
-                Deep Research on Private Heterogeneous Data via the Internet of Data
+                Large Language Model for Code Generation and Knowledge Q&A in Molecular Dynamics
             </p>
             <div class="hero-authors">
                 <span>Zhuofan Shi</span><sup>1</sup>, 
-                <span>Zijie Guo</span><sup>1</sup>, 
-                <span>Xinjian Ma</span><sup>1</sup>, 
+                <span>Hubao A</span><sup>1</sup>, 
+                <span>Yufei Shao</span><sup>1</sup>, 
+                <span>Mengyan Dai</span><sup>1</sup>, 
+                <span>Yadong Yu</span><sup>1</sup>, 
+                <span>Pan Xiang</span><sup>1</sup>, 
+                <span>Dongliang Huang</span><sup>1</sup>, 
+                <span>Hongxu An</span><sup>1</sup>, 
+                <span>Chunxiao Xin</span><sup>1</sup>, 
+                <span>Haiyang Shen</span><sup>1</sup>, 
+                <span>Zhenyu Wang</span><sup>1</sup>, 
+                <span>Yunshan Na</span><sup>1</sup>, 
                 <span>Gang Huang</span><sup>1</sup>, 
-                <span>Yun Ma</span><sup>1</sup>, 
                 <span>Xiang Jing</span><sup>1</sup>
             </div>
             <div class="hero-affiliations">
                 <sup>1</sup>Peking University
             </div>
             <div class="hero-buttons">
-                <a href="https://arxiv.org/abs/2510.01553" class="btn btn-primary" target="_blank">阅读论文</a>
-                <a href="https://arxiv.org/pdf/2510.01553" class="btn btn-secondary" target="_blank">下载 PDF</a>
+                <a href="https://arxiv.org/abs/2601.02075" class="btn btn-primary" target="_blank">阅读论文</a>
+                <a href="https://arxiv.org/pdf/2601.02075" class="btn btn-secondary" target="_blank">下载 PDF</a>
             </div>
         </div>
     </section>
@@ -57,29 +65,33 @@
             <div class="overview-content">
                 <div class="overview-text">
                     <p class="lead">
-                        多源、异构、多模态科学数据的快速增长日益暴露了传统数据管理的局限性。
-                        大多数现有的深度研究（Deep Research）工作主要关注网络搜索，而忽略了本地私有数据。
-                        因此，这些框架对私有数据的检索效率低下，且无法遵循 FAIR 原则，最终导致效率低下和可重用性有限。
+                        分子动力学（MD）仿真对于理解材料科学中的原子尺度行为至关重要，
+                        然而编写LAMMPS脚本仍然是一项高度专业化和耗时的任务。
+                        尽管大语言模型在代码生成和领域特定问答方面显示出潜力，
+                        但它们在MD场景中的性能受到领域数据稀缺、最先进LLM的高部署成本以及低代码可执行性的限制。
                     </p>
                     <p>
-                        为此，我们提出了 <strong>IoDResearch</strong>（Internet of Data Research），
-                        一个以私有数据为中心的深度研究框架，实现了数据互联网（Internet of Data）范式。
-                        IoDResearch 将异构资源封装为符合 FAIR 原则的数字对象，
-                        并进一步将其细化为原子知识单元和知识图谱，形成用于多粒度检索的异构图索引。
-                        在此基础上，多智能体系统支持可靠的问答和结构化的科学报告生成。
+                        基于我们之前的MDAgent，我们提出了 <strong>MDAgent2</strong>，
+                        这是第一个能够在MD领域同时执行知识问答和代码生成的端到端框架。
+                        MDAgent2构建了一个领域特定的数据构建管道，产生了三个高质量数据集，
+                        涵盖MD知识、问答和代码生成。基于这些数据集，我们采用三阶段后训练策略——
+                        继续预训练（CPT）、监督微调（SFT）和强化学习（RL）——
+                        训练了两个领域适应模型：MD-Instruct和MD-Code。
                     </p>
                     <div class="key-contributions">
                         <h3>主要贡献</h3>
                         <ul>
-                            <li>提出 <strong>IoDResearch</strong>，一个以私有数据为中心的深度研究框架，实现了数据互联网范式</li>
-                            <li>将异构资源封装为符合 <strong>FAIR 原则</strong>的数字对象，形成异构图索引用于多粒度检索</li>
-                            <li>建立<strong>多智能体系统</strong>，支持可靠的问答和结构化科学报告生成</li>
-                            <li>建立 <strong>IoD DeepResearch Benchmark</strong>，系统评估 IoD 场景下的数据表示和深度研究能力</li>
+                            <li>提出 <strong>MDAgent2</strong>，第一个在MD领域同时支持知识问答和代码生成的端到端框架</li>
+                            <li>构建<strong>领域特定的数据构建管道</strong>，产生三个高质量数据集</li>
+                            <li>采用<strong>三阶段后训练策略</strong>（CPT、SFT、RL）训练领域适应模型</li>
+                            <li>引入 <strong>MD-GRPO</strong>，一种利用仿真反馈的闭环强化学习方法</li>
+                            <li>构建 <strong>MDAgent2-RUNTIME</strong>，可部署的多智能体系统</li>
+                            <li>提出 <strong>MD-EvalBench</strong>，第一个用于LAMMPS代码生成和问答的基准测试</li>
                         </ul>
                     </div>
                 </div>
                 <div class="overview-image">
-                    <img src="assets/IoDResearch-total-1.png" alt="IoDResearch Overview">
+                    <img src="pics/MDAgent2-System.png" alt="MDAgent2 Overview">
                 </div>
             </div>
         </div>
@@ -91,64 +103,70 @@
             <h2 class="section-title">方法论</h2>
             
             <div class="methodology-item">
-                <h3>FAIR 合规的数据表示</h3>
+                <h3>三阶段训练策略</h3>
                 <div class="methodology-content">
                     <div class="methodology-text">
                         <p>
-                            IoDResearch 将异构资源封装为符合 <strong>FAIR 原则</strong>的数字对象，
-                            确保科学数据的可发现性（Findability）、可访问性（Accessibility）、
-                            互操作性（Interoperability）和可重用性（Reusability）。
+                            MDAgent2采用全面的三阶段后训练策略，实现从通用大语言模型到MD领域专用模型的转换：
                         </p>
-                        <p>这些数字对象进一步细化为：</p>
                         <ul>
-                            <li><strong>原子知识单元</strong>：细粒度的知识表示，用于精确检索</li>
-                            <li><strong>知识图谱</strong>：实体间关系的结构化表示</li>
-                            <li><strong>异构图索引</strong>：多粒度检索基础设施</li>
+                            <li><strong>继续预训练（CPT）</strong>：在MD特定语料库上继续预训练，实现领域适应</li>
+                            <li><strong>监督微调（SFT）</strong>：在高质量的指令跟随和代码生成数据集上进行微调</li>
+                            <li><strong>强化学习（RL）</strong>：使用MD-GRPO方法通过仿真反馈优化代码生成质量</li>
                         </ul>
+                        <p>
+                            通过这种分阶段的训练策略，我们训练了两个专门的模型：
+                            <strong>MD-Instruct</strong>（用于知识问答）和<strong>MD-Code</strong>（用于代码生成）。
+                        </p>
                     </div>
                     <div class="methodology-image">
-                        <img src="assets/IoDRearch-EN-threeLayer-202508.drawio-1.png" alt="FAIR-Compliant Data Representation">
+                        <img src="pics/MDAgent2-System.png" alt="Three-Stage Training Strategy">
                     </div>
                 </div>
             </div>
 
             <div class="methodology-item">
-                <h3>多智能体系统</h3>
+                <h3>MD-GRPO：闭环强化学习</h3>
                 <div class="methodology-content">
                     <div class="methodology-text">
                         <p>
-                            在异构图表示的基础上，IoDResearch 采用多智能体系统，支持：
+                            <strong>MD-GRPO</strong> 是一种新颖的闭环强化学习方法，专门设计用于优化LAMMPS代码生成：
                         </p>
                         <ul>
-                            <li><strong>可靠的问答</strong>：在私有异构数据上进行准确的问答</li>
-                            <li><strong>结构化科学报告生成</strong>：自动生成结构良好的研究报告</li>
+                            <li><strong>仿真反馈奖励</strong>：利用仿真结果作为奖励信号，评估生成代码的质量</li>
+                            <li><strong>轨迹回收机制</strong>：回收低奖励轨迹进行持续优化，提高训练效率</li>
+                            <li><strong>迭代改进</strong>：通过闭环反馈实现生成代码的迭代改进</li>
                         </ul>
                         <p>
-                            多智能体系统通过协作和分工，能够处理复杂的深度研究任务，
-                            确保生成的内容既准确又结构化。
+                            MD-GRPO方法能够有效利用仿真环境的反馈信号，
+                            显著提高生成代码的可执行性和正确性。
                         </p>
                     </div>
                     <div class="methodology-image">
-                        <img src="assets/IoDResearch-EN-MultiAgents-202508.drawio-1.png" alt="Multi-Agent System">
+                        <img src="pics/MDAgent2-MDGRPO.drawio.png" alt="MD-GRPO">
                     </div>
                 </div>
             </div>
 
             <div class="methodology-item">
-                <h3>数据互联网范式</h3>
+                <h3>MDAgent2-RUNTIME：多智能体系统</h3>
                 <div class="methodology-content">
                     <div class="methodology-text">
                         <p>
-                            IoDResearch 实现了数据互联网范式，使得：
+                            <strong>MDAgent2-RUNTIME</strong> 是一个可部署的多智能体系统，实现了完整的代码生成到执行的闭环：
                         </p>
                         <ul>
-                            <li><strong>以私有数据为中心的深度研究</strong>：专注于本地私有数据而非网络搜索</li>
-                            <li><strong>异构数据集成</strong>：统一表示多源、多模态的科学数据</li>
-                            <li><strong>可信且可重用的科学发现</strong>：遵循 FAIR 原则以更好地管理数据</li>
+                            <li><strong>代码生成智能体</strong>：从自然语言描述生成LAMMPS脚本</li>
+                            <li><strong>执行智能体</strong>：在仿真环境中运行生成的代码</li>
+                            <li><strong>评估智能体</strong>：评估代码正确性和仿真结果</li>
+                            <li><strong>纠正智能体</strong>：基于执行反馈进行自我纠正和优化</li>
                         </ul>
+                        <p>
+                            多智能体系统通过协作和分工，实现了从需求理解到代码执行的全流程自动化。
+                        </p>
                     </div>
                     <div class="methodology-image">
-                        <img src="assets/IoDResearch-EN-example-202508.drawio-1.png" alt="Internet of Data Paradigm">
+                        <img src="pics/MDAgent2-RUNTIME.png" alt="MDAgent2-RUNTIME">
                     </div>
                 </div>
             </div>
@@ -160,33 +178,35 @@
         <div class="container">
             <h2 class="section-title">性能评估</h2>
             <p class="section-description">
-                我们在检索、问答和报告生成任务上的实验结果表明，
-                IoDResearch 在多个基准测试中持续超越代表性的 RAG 和深度研究基线方法。
+                我们在MD-EvalBench上的实验结果表明，
+                MDAgent2在代码生成和问答任务上持续超越多个强基线方法，
+                展示了大语言模型在工业仿真任务中的适应性和泛化能力。
             </p>
             
             <div class="performance-images">
                 <div class="performance-image">
-                    <img src="assets/ScreenShot_2025-12-16_103550_864.png" alt="Performance Results 1">
+                    <img src="pics/Exp1-table1.png" alt="Performance Comparison Table">
                 </div>
                 <div class="performance-image">
-                    <img src="assets/ScreenShot_2025-12-16_103500_066.png" alt="Performance Results 2">
-                </div>
-                <div class="performance-image">
-                    <img src="assets/ScreenShot_2025-12-16_103510_951.png" alt="Performance Results 3">
+                    <img src="pics/EXP2-figure_combined.png" alt="Performance Results">
                 </div>
             </div>
 
             <div class="benchmark-info">
-                <h3>IoD DeepResearch Benchmark</h3>
+                <h3>MD-EvalBench</h3>
                 <p>
-                    我们建立了 <strong>IoD DeepResearch Benchmark</strong> 来系统评估
-                    IoD 场景下的数据表示和深度研究能力。基准测试包括：
+                    我们建立了 <strong>MD-EvalBench</strong>，这是第一个用于LAMMPS代码生成和问答的基准测试，
+                    系统评估MDAgent2在以下任务上的能力：
                 </p>
                 <ul>
-                    <li><strong>检索任务</strong>：在异构图索引上进行多粒度检索</li>
-                    <li><strong>问答任务</strong>：在私有异构数据上进行可靠的问答</li>
-                    <li><strong>报告生成任务</strong>：生成结构化的科学报告</li>
+                    <li><strong>代码生成任务</strong>：从自然语言描述生成可执行的LAMMPS脚本</li>
+                    <li><strong>问答任务</strong>：回答关于分子动力学的领域特定问题</li>
+                    <li><strong>代码可执行性</strong>：确保生成的代码能够在仿真环境中成功运行</li>
                 </ul>
+                <p>
+                    实验结果表明，MDAgent2在多个评估指标上持续超越代表性的基线方法，
+                    证明了其在工业仿真任务中的实用价值。
+                </p>
             </div>
         </div>
     </section>
@@ -197,24 +217,34 @@
             <h2 class="section-title">核心特性</h2>
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h3>多粒度检索</h3>
-                    <p>基于异构图索引实现多粒度检索，支持从原子知识单元到完整知识图谱的不同粒度查询。</p>
+                    <div class="feature-icon">🧬</div>
+                    <h3>领域适应</h3>
+                    <p>通过三阶段训练策略实现从通用模型到MD领域专用模型的深度适应，显著提升在分子动力学任务上的性能。</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🤖</div>
                     <h3>多智能体协作</h3>
-                    <p>多智能体系统通过协作和分工，处理复杂的深度研究任务，确保生成内容的准确性和结构化。</p>
+                    <p>MDAgent2-RUNTIME多智能体系统通过协作和分工，实现从代码生成到执行评估的全流程自动化。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>闭环优化</h3>
+                    <p>MD-GRPO方法利用仿真反馈实现闭环优化，通过迭代改进不断提高生成代码的质量和可执行性。</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
-                    <h3>FAIR 原则</h3>
-                    <p>遵循 FAIR 原则，确保数据的可发现性、可访问性、互操作性和可重用性。</p>
+                    <h3>系统评估</h3>
+                    <p>MD-EvalBench提供全面的评估框架，系统评估代码生成和问答能力，确保模型性能的可验证性。</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">🔗</div>
-                    <h3>异构数据集成</h3>
-                    <p>统一表示多源、多模态的科学数据，实现异构数据的无缝集成和管理。</p>
+                    <div class="feature-icon">💻</div>
+                    <h3>代码生成</h3>
+                    <p>自动生成高质量、可执行的LAMMPS脚本，显著降低MD仿真的技术门槛和时间成本。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">❓</div>
+                    <h3>知识问答</h3>
+                    <p>准确回答MD领域的专业问题，为研究人员提供可靠的领域知识支持。</p>
                 </div>
             </div>
         </div>
@@ -228,14 +258,14 @@
                 如果您觉得我们的工作对您的研究有帮助或启发，请引用：
             </p>
             <div class="citation-box">
-                <pre><code>@misc{shi2025iodresearchdeepresearchprivate,
-    title={IoDResearch: Deep Research on Private Heterogeneous Data via the Internet of Data},
-    author={Zhuofan Shi and Zijie Guo and Xinjian Ma and Gang Huang and Yun Ma and Xiang Jing},
-    year={2025},
-    eprint={2510.01553},
+                <pre><code>@misc{shi2026mdagent2large,
+    title={MDAgent2: Large Language Model for Code Generation and Knowledge Q&A in Molecular Dynamics},
+    author={Zhuofan Shi and Hubao A and Yufei Shao and Mengyan Dai and Yadong Yu and Pan Xiang and Dongliang Huang and Hongxu An and Chunxiao Xin and Haiyang Shen and Zhenyu Wang and Yunshan Na and Gang Huang and Xiang Jing},
+    year={2026},
+    eprint={2601.02075},
     archivePrefix={arXiv},
-    primaryClass={cs.IR},
-    url={https://arxiv.org/abs/2510.01553}
+    primaryClass={cs.CE},
+    url={https://arxiv.org/abs/2601.02075}
 }</code></pre>
             </div>
         </div>
@@ -244,10 +274,10 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>IoDResearch 是北京大学的研究项目。</p>
+            <p>MDAgent2 是北京大学的研究项目。</p>
             <p>
-                <a href="https://arxiv.org/abs/2510.01553" target="_blank">arXiv:2510.01553</a> | 
-                <a href="https://github.com/your-repo/IoDResearch" target="_blank">GitHub</a>
+                <a href="https://arxiv.org/abs/2601.02075" target="_blank">arXiv:2601.02075</a> | 
+                <a href="https://github.com/your-repo/PKU_MDAgent2" target="_blank">GitHub</a>
             </p>
         </div>
     </footer>
@@ -255,4 +285,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-

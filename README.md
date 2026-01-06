@@ -1,94 +1,122 @@
-
-# IoDResearch: Deep Research on Private Heterogeneous Data via the Internet of Data
+# MDAgent2: Large Language Model for Code Generation and Knowledge Q&A in Molecular Dynamics
 
 <p align="center">
-  <img src="./assets/IoDResearch-total-1.png" alt="logo" width="100%"/>
+  <img src="./pics/MDAgent2-System.png" alt="logo" width="100%"/>
 </p>
 
-`<a href="https://arxiv.org/pdf/2510.01553">`![arXiv](https://img.shields.io/badge/arXiv-2510.01553-b31b1b) `</a>`
-`<a href="https://huggingface.co/collections/FredericFan/iodresearch">`![Datasets](https://img.shields.io/badge/Hugging%20Face-FFD21E?logo=huggingface&logoColor=white) `</a>`
-`<a href="https://fredericvan.github.io/PKU_IoDResearch/">`![website](https://img.shields.io/badge/website-PKU_IoDResearch-blue) `</a>`
+`<a href="https://arxiv.org/abs/2601.02075">`![arXiv](https://img.shields.io/badge/arXiv-2601.02075-b31b1b)`</a>`
+`<a href="https://github.com/your-repo/PKU_MDAgent2">`![GitHub](https://img.shields.io/badge/GitHub-PKU_MDAgent2-blue)`</a>`
+`<a href="https://your-username.github.io/PKU_MDAgent2/">`![website](https://img.shields.io/badge/website-MDAgent2-blue)`</a>`
 
 > **Note:** Code and Datasets will be released upon paper acceptance.
 
 ## 💡 Introduction
 
-- We propose **IoDResearch** (Internet of Data Research), a **private data-centric** Deep Research framework that operationalizes the Internet of Data paradigm for heterogeneous scientific data.
-- IoDResearch encapsulates heterogeneous resources as **FAIR-compliant digital objects**, and further refines them into atomic knowledge units and knowledge graphs, forming a heterogeneous graph index for multi-granularity retrieval.
-- We establish a **multi-agent system** that supports both reliable question answering and structured scientific report generation on top of the heterogeneous graph representation.
-- We establish the **IoD DeepResearch Benchmark** to systematically evaluate both data representation and Deep Research capabilities in IoD scenarios. Experimental results show that IoDResearch consistently surpasses representative RAG and Deep Research baselines.
-
-## Benchmark
-
-**IoD DeepResearch Benchmark** is established to systematically evaluate both data representation and Deep Research capabilities in IoD scenarios. The benchmark includes:
-
-- **Retrieval tasks**: Multi-granularity retrieval on heterogeneous graph index
-- **Question Answering (QA) tasks**: Reliable question answering on private heterogeneous data
-- **Report Writing tasks**: Structured scientific report generation
-
-Experimental results on retrieval, QA, and report-writing tasks show that IoDResearch consistently surpasses representative RAG and Deep Research baselines.
+- We present **MDAgent2**, the first end-to-end framework capable of performing both knowledge Q&A and code generation within the Molecular Dynamics (MD) domain.
+- We construct a domain-specific data-construction pipeline that yields three high-quality datasets spanning MD knowledge, question answering, and code generation.
+- We adopt a three-stage post-training strategy--continued pre-training (CPT), supervised fine-tuning (SFT), and reinforcement learning (RL)--to train two domain-adapted models, **MD-Instruct** and **MD-Code**.
+- We introduce **MD-GRPO**, a closed-loop RL method that leverages simulation outcomes as reward signals and recycles low-reward trajectories for continual refinement.
+- We build **MDAgent2-RUNTIME**, a deployable multi-agent system that integrates code generation, execution, evaluation, and self-correction.
+- We propose **MD-EvalBench**, the first benchmark for LAMMPS code generation and question answering.
 
 ## 🚀 Performance
 
-<p align="center">
-  <img src="assets\ScreenShot_2025-12-16_103550_864.png" alt="logo" width="80%"/>
-</p>
-<p align="center">
-  <img src="assets\ScreenShot_2025-12-16_103500_066.png" alt="logo" width="80%"/>
-</p>
-<p align="center">
-  <img src="assets\ScreenShot_2025-12-16_103510_951.png" alt="logo" width="80%"/>
-</p>
-
-## 🔍 IoDResearch Features
-
-### FAIR-Compliant Data Representation
+Our models and system achieve performance surpassing several strong baselines on MD-EvalBench, demonstrating the adaptability and generalization capability of large language models in industrial simulation tasks.
 
 <p align="center">
-  <img src="./assets\IoDRearch-EN-threeLayer-202508.drawio-1.png" alt="logo" width="80%"/>
+  <img src="pics/Exp1-table1.png" alt="Performance Comparison Table" width="100%"/>
 </p>
-
-IoDResearch encapsulates heterogeneous resources as **FAIR-compliant digital objects**, ensuring Findability, Accessibility, Interoperability, and Reusability of scientific data. These digital objects are further refined into:
-
-- **Atomic knowledge units**: Fine-grained knowledge representation for precise retrieval
-- **Knowledge graphs**: Structured representation of relationships between entities
-- **Heterogeneous graph index**: Multi-granularity retrieval infrastructure
 
 <p align="center">
-  <img src="assets\IoDResearch-EN-example-202508.drawio-1.png" alt="logo" width="80%"/>
+  <img src="pics/EXP2-figure_combined.png" alt="Performance Results" width="80%"/>
 </p>
 
-### Multi-Agent System
+## 🔍 MDAgent2 Features
+
+### Three-Stage Training Strategy
 
 <p align="center">
-  <img src="assets\IoDResearch-EN-MultiAgents-202508.drawio-1.png" alt="logo" width="80%"/>
+  <img src="./pics/MDAgent2-System.png" alt="MDAgent2 System" width="80%"/>
 </p>
 
-On top of the heterogeneous graph representation, IoDResearch employs a multi-agent system that supports:
+MDAgent2 employs a comprehensive three-stage post-training strategy:
 
-- **Reliable Question Answering**: Accurate QA on private heterogeneous data
-- **Structured Scientific Report Generation**: Automated generation of well-structured research reports
+- **Continued Pre-training (CPT)**: Domain adaptation through continued pre-training on MD-specific corpus
+- **Supervised Fine-tuning (SFT)**: Fine-tuning on high-quality instruction-following and code generation datasets
+- **Reinforcement Learning (RL)**: MD-GRPO method for optimizing code generation with simulation feedback
 
-### Internet of Data Paradigm
+### MD-GRPO: Closed-Loop Reinforcement Learning
 
-IoDResearch operationalizes the Internet of Data paradigm, enabling:
+<p align="center">
+  <img src="./pics/MDAgent2-MDGRPO.drawio.png" alt="MD-GRPO" width="80%"/>
+</p>
 
-- **Private data-centric Deep Research**: Focus on local private data rather than web search
-- **Heterogeneous data integration**: Unified representation of multi-source, multimodal scientific data
-- **Trustworthy and reusable scientific discovery**: FAIR principles compliance for better data management
+**MD-GRPO** is a novel closed-loop RL method that:
+
+- Leverages simulation outcomes as reward signals for code quality assessment
+- Recycles low-reward trajectories for continual refinement
+- Enables iterative improvement of generated LAMMPS scripts
+
+### MDAgent2-RUNTIME: Multi-Agent System
+
+<p align="center">
+  <img src="./pics/MDAgent2-RUNTIME.png" alt="MDAgent2-RUNTIME" width="80%"/>
+</p>
+
+**MDAgent2-RUNTIME** is a deployable multi-agent system that integrates:
+
+- **Code Generation**: Automatic LAMMPS script generation from natural language descriptions
+- **Code Execution**: Running generated scripts in simulation environments
+- **Evaluation**: Assessing code correctness and simulation outcomes
+- **Self-Correction**: Iterative refinement based on execution feedback
+
+### Domain-Specific Datasets
+
+We construct three high-quality datasets:
+
+- **MD Knowledge Dataset**: Comprehensive knowledge base for molecular dynamics
+- **Question Answering Dataset**: Q&A pairs for MD domain knowledge
+- **Code Generation Dataset**: LAMMPS script examples with natural language descriptions
+
+## 📊 MD-EvalBench
+
+**MD-EvalBench** is the first benchmark for LAMMPS code generation and question answering, systematically evaluating:
+
+- **Code Generation Tasks**: Generating executable LAMMPS scripts from natural language
+- **Question Answering Tasks**: Answering domain-specific questions about molecular dynamics
+- **Code Executability**: Ensuring generated code can run successfully in simulation environments
+
+Experimental results show that MDAgent2 consistently surpasses representative baselines on MD-EvalBench.
+
+## 🎯 Key Contributions
+
+1. **First End-to-End Framework**: MDAgent2 is the first framework to support both knowledge Q&A and code generation in the MD domain
+2. **Domain-Specific Data Pipeline**: High-quality dataset construction pipeline for MD domain
+3. **Three-Stage Training**: Comprehensive training strategy combining CPT, SFT, and RL
+4. **MD-GRPO Method**: Novel closed-loop RL approach leveraging simulation feedback
+5. **Deployable System**: MDAgent2-RUNTIME for practical deployment
+6. **First Benchmark**: MD-EvalBench for systematic evaluation
 
 ## 📑 Citation
 
 If this work is helpful, please kindly cite as:
 
 ```bibtex
-@misc{shi2025iodresearchdeepresearchprivate,
-      title={IoDResearch: Deep Research on Private Heterogeneous Data via the Internet of Data}, 
-      author={Zhuofan Shi and Zijie Guo and Xinjian Ma and Gang Huang and Yun Ma and Xiang Jing},
-      year={2025},
-      eprint={2510.01553},
+@misc{shi2026mdagent2large,
+      title={MDAgent2: Large Language Model for Code Generation and Knowledge Q&A in Molecular Dynamics}, 
+      author={Zhuofan Shi and Hubao A and Yufei Shao and Mengyan Dai and Yadong Yu and Pan Xiang and Dongliang Huang and Hongxu An and Chunxiao Xin and Haiyang Shen and Zhenyu Wang and Yunshan Na and Gang Huang and Xiang Jing},
+      year={2026},
+      eprint={2601.02075},
       archivePrefix={arXiv},
-      primaryClass={cs.IR},
-      url={https://arxiv.org/abs/2510.01553}, 
+      primaryClass={cs.CE},
+      url={https://arxiv.org/abs/2601.02075}
 }
 ```
+
+## 📝 License
+
+This project is licensed under the terms specified in the LICENSE file.
+
+## 🙏 Acknowledgments
+
+We gratefully acknowledge support from all contributors and institutions involved in this research.
