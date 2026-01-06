@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoDResearch: Deep Research on Private Heterogeneous Data via the Internet of Data</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-links">
+                <a href="#overview">概述</a>
+                <a href="#methodology">方法论</a>
+                <a href="#performance">性能</a>
+                <a href="#features">特性</a>
+                <a href="#citation">引用</a>
+            </div>
+            <a href="https://arxiv.org/abs/2510.01553" class="nav-paper" target="_blank">论文</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <h1 class="hero-title">
+                <span class="emoji">🔬</span>
+                IoDResearch
+            </h1>
+            <p class="hero-subtitle">基于数据互联网的私有异构数据深度研究框架</p>
+            <p class="hero-description">
+                Deep Research on Private Heterogeneous Data via the Internet of Data
+            </p>
+            <div class="hero-authors">
+                <span>Zhuofan Shi</span><sup>1</sup>, 
+                <span>Zijie Guo</span><sup>1</sup>, 
+                <span>Xinjian Ma</span><sup>1</sup>, 
+                <span>Gang Huang</span><sup>1</sup>, 
+                <span>Yun Ma</span><sup>1</sup>, 
+                <span>Xiang Jing</span><sup>1</sup>
+            </div>
+            <div class="hero-affiliations">
+                <sup>1</sup>Peking University
+            </div>
+            <div class="hero-buttons">
+                <a href="https://arxiv.org/abs/2510.01553" class="btn btn-primary" target="_blank">阅读论文</a>
+                <a href="https://arxiv.org/pdf/2510.01553" class="btn btn-secondary" target="_blank">下载 PDF</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Overview Section -->
+    <section id="overview" class="section">
+        <div class="container">
+            <h2 class="section-title">概述</h2>
+            <div class="overview-content">
+                <div class="overview-text">
+                    <p class="lead">
+                        多源、异构、多模态科学数据的快速增长日益暴露了传统数据管理的局限性。
+                        大多数现有的深度研究（Deep Research）工作主要关注网络搜索，而忽略了本地私有数据。
+                        因此，这些框架对私有数据的检索效率低下，且无法遵循 FAIR 原则，最终导致效率低下和可重用性有限。
+                    </p>
+                    <p>
+                        为此，我们提出了 <strong>IoDResearch</strong>（Internet of Data Research），
+                        一个以私有数据为中心的深度研究框架，实现了数据互联网（Internet of Data）范式。
+                        IoDResearch 将异构资源封装为符合 FAIR 原则的数字对象，
+                        并进一步将其细化为原子知识单元和知识图谱，形成用于多粒度检索的异构图索引。
+                        在此基础上，多智能体系统支持可靠的问答和结构化的科学报告生成。
+                    </p>
+                    <div class="key-contributions">
+                        <h3>主要贡献</h3>
+                        <ul>
+                            <li>提出 <strong>IoDResearch</strong>，一个以私有数据为中心的深度研究框架，实现了数据互联网范式</li>
+                            <li>将异构资源封装为符合 <strong>FAIR 原则</strong>的数字对象，形成异构图索引用于多粒度检索</li>
+                            <li>建立<strong>多智能体系统</strong>，支持可靠的问答和结构化科学报告生成</li>
+                            <li>建立 <strong>IoD DeepResearch Benchmark</strong>，系统评估 IoD 场景下的数据表示和深度研究能力</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="overview-image">
+                    <img src="assets/IoDResearch-total-1.png" alt="IoDResearch Overview">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Methodology Section -->
+    <section id="methodology" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">方法论</h2>
+            
+            <div class="methodology-item">
+                <h3>FAIR 合规的数据表示</h3>
+                <div class="methodology-content">
+                    <div class="methodology-text">
+                        <p>
+                            IoDResearch 将异构资源封装为符合 <strong>FAIR 原则</strong>的数字对象，
+                            确保科学数据的可发现性（Findability）、可访问性（Accessibility）、
+                            互操作性（Interoperability）和可重用性（Reusability）。
+                        </p>
+                        <p>这些数字对象进一步细化为：</p>
+                        <ul>
+                            <li><strong>原子知识单元</strong>：细粒度的知识表示，用于精确检索</li>
+                            <li><strong>知识图谱</strong>：实体间关系的结构化表示</li>
+                            <li><strong>异构图索引</strong>：多粒度检索基础设施</li>
+                        </ul>
+                    </div>
+                    <div class="methodology-image">
+                        <img src="assets/IoDRearch-EN-threeLayer-202508.drawio-1.png" alt="FAIR-Compliant Data Representation">
+                    </div>
+                </div>
+            </div>
+
+            <div class="methodology-item">
+                <h3>多智能体系统</h3>
+                <div class="methodology-content">
+                    <div class="methodology-text">
+                        <p>
+                            在异构图表示的基础上，IoDResearch 采用多智能体系统，支持：
+                        </p>
+                        <ul>
+                            <li><strong>可靠的问答</strong>：在私有异构数据上进行准确的问答</li>
+                            <li><strong>结构化科学报告生成</strong>：自动生成结构良好的研究报告</li>
+                        </ul>
+                        <p>
+                            多智能体系统通过协作和分工，能够处理复杂的深度研究任务，
+                            确保生成的内容既准确又结构化。
+                        </p>
+                    </div>
+                    <div class="methodology-image">
+                        <img src="assets/IoDResearch-EN-MultiAgents-202508.drawio-1.png" alt="Multi-Agent System">
+                    </div>
+                </div>
+            </div>
+
+            <div class="methodology-item">
+                <h3>数据互联网范式</h3>
+                <div class="methodology-content">
+                    <div class="methodology-text">
+                        <p>
+                            IoDResearch 实现了数据互联网范式，使得：
+                        </p>
+                        <ul>
+                            <li><strong>以私有数据为中心的深度研究</strong>：专注于本地私有数据而非网络搜索</li>
+                            <li><strong>异构数据集成</strong>：统一表示多源、多模态的科学数据</li>
+                            <li><strong>可信且可重用的科学发现</strong>：遵循 FAIR 原则以更好地管理数据</li>
+                        </ul>
+                    </div>
+                    <div class="methodology-image">
+                        <img src="assets/IoDResearch-EN-example-202508.drawio-1.png" alt="Internet of Data Paradigm">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section id="performance" class="section">
+        <div class="container">
+            <h2 class="section-title">性能评估</h2>
+            <p class="section-description">
+                我们在检索、问答和报告生成任务上的实验结果表明，
+                IoDResearch 在多个基准测试中持续超越代表性的 RAG 和深度研究基线方法。
+            </p>
+            
+            <div class="performance-images">
+                <div class="performance-image">
+                    <img src="assets/ScreenShot_2025-12-16_103550_864.png" alt="Performance Results 1">
+                </div>
+                <div class="performance-image">
+                    <img src="assets/ScreenShot_2025-12-16_103500_066.png" alt="Performance Results 2">
+                </div>
+                <div class="performance-image">
+                    <img src="assets/ScreenShot_2025-12-16_103510_951.png" alt="Performance Results 3">
+                </div>
+            </div>
+
+            <div class="benchmark-info">
+                <h3>IoD DeepResearch Benchmark</h3>
+                <p>
+                    我们建立了 <strong>IoD DeepResearch Benchmark</strong> 来系统评估
+                    IoD 场景下的数据表示和深度研究能力。基准测试包括：
+                </p>
+                <ul>
+                    <li><strong>检索任务</strong>：在异构图索引上进行多粒度检索</li>
+                    <li><strong>问答任务</strong>：在私有异构数据上进行可靠的问答</li>
+                    <li><strong>报告生成任务</strong>：生成结构化的科学报告</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">核心特性</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>多粒度检索</h3>
+                    <p>基于异构图索引实现多粒度检索，支持从原子知识单元到完整知识图谱的不同粒度查询。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>多智能体协作</h3>
+                    <p>多智能体系统通过协作和分工，处理复杂的深度研究任务，确保生成内容的准确性和结构化。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>FAIR 原则</h3>
+                    <p>遵循 FAIR 原则，确保数据的可发现性、可访问性、互操作性和可重用性。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>异构数据集成</h3>
+                    <p>统一表示多源、多模态的科学数据，实现异构数据的无缝集成和管理。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Citation Section -->
+    <section id="citation" class="section">
+        <div class="container">
+            <h2 class="section-title">引用</h2>
+            <p class="section-description">
+                如果您觉得我们的工作对您的研究有帮助或启发，请引用：
+            </p>
+            <div class="citation-box">
+                <pre><code>@misc{shi2025iodresearchdeepresearchprivate,
+    title={IoDResearch: Deep Research on Private Heterogeneous Data via the Internet of Data},
+    author={Zhuofan Shi and Zijie Guo and Xinjian Ma and Gang Huang and Yun Ma and Xiang Jing},
+    year={2025},
+    eprint={2510.01553},
+    archivePrefix={arXiv},
+    primaryClass={cs.IR},
+    url={https://arxiv.org/abs/2510.01553}
+}</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>IoDResearch 是北京大学的研究项目。</p>
+            <p>
+                <a href="https://arxiv.org/abs/2510.01553" target="_blank">arXiv:2510.01553</a> | 
+                <a href="https://github.com/your-repo/IoDResearch" target="_blank">GitHub</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
