@@ -5,9 +5,9 @@
   <img src="./pics/MDAgent2-System.png" alt="logo" width="100%"/>
 </p>
 
-<a href="https://arxiv.org/abs/2601.02075">![arXiv](https://img.shields.io/badge/arXiv-2601.02075-b31b1b)</a>
-<a href="https://github.com/your-repo/PKU_MDAgent2">![GitHub](https://img.shields.io/badge/GitHub-PKU_MDAgent2-blue)</a>
-<a href="https://your-username.github.io/PKU_MDAgent2/">![website](https://img.shields.io/badge/website-MDAgent2-blue)</a>
+[![arXiv](https://img.shields.io/badge/arXiv-2601.02075-b31b1b)](https://arxiv.org/abs/2601.02075)
+[![GitHub](https://img.shields.io/badge/GitHub-PKU_MDAgent2-blue)](https://github.com/your-repo/PKU_MDAgent2)
+[![website](https://img.shields.io/badge/website-MDAgent2-blue)](https://fredericvan.github.io/PKU_MDAgent2/)
 
 > **注意：** 代码和数据集将在论文接收后发布。
 
