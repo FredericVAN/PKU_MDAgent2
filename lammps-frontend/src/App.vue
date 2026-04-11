@@ -112,7 +112,7 @@
                         <el-list v-if="fileList.length" style="display: flex; flex-wrap: wrap; flex-direction: row; gap: 10px; padding: 10px;">
                           <el-list-item v-for="(file, idx) in fileList" :key="idx" style="display: flex; align-items: center;">
                             <div v-if="isImage(file)">
-                              <img :src="`http://192.168.203.154:8000/file?path=${encodeURIComponent(file)}`" style="width: 600px; height: auto;" :alt="getFileName(file)">
+                              <img :src="`http://localhost:8000/file?path=${encodeURIComponent(file)}`" style="width: 600px; height: auto;" :alt="getFileName(file)">
                               <div style="display: flex; justify-content: center; margin-top: 10px;">
                                 <el-button
                                   type="success"
@@ -237,7 +237,7 @@ function send() {
   if (!input.value.trim()) return
   messages.value = []
   loading.value = true
-  fetch('http://192.168.203.154:8000/run_lammps_agents_stream', {
+  fetch('http://localhost:8000/run_lammps_agents_stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_input: input.value })
@@ -335,7 +335,7 @@ watch(
 function loadFileList(dir) {
   fileLoading.value = true
   fileList.value = []
-  fetch('http://192.168.203.154:8000/list_files_in_dir', {
+  fetch('http://localhost:8000/list_files_in_dir', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dir_path: dir })
@@ -357,11 +357,11 @@ function isImage(file) {
   return /\.(png|gif)$/i.test(file)
 }
 function previewImage(file) {
-  imgPreviewUrl.value = `http://192.168.203.154:8000/file?path=${encodeURIComponent(file)}`
+  imgPreviewUrl.value = `http://localhost:8000/file?path=${encodeURIComponent(file)}`
   imgDialogVisible.value = true
 }
 function downloadFile(file) {
-  window.open(`http://192.168.203.154:8000/file?path=${encodeURIComponent(file)}`)
+  window.open(`http://localhost:8000/file?path=${encodeURIComponent(file)}`)
 }
 
 // 复制 generate_dir 路径

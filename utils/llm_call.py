@@ -25,9 +25,9 @@ qwen_client = OpenAI(
 )
 # vllm服务配置
 # 可以通过环境变量 VLLM_API_BASE 和 VLLM_API_KEY 来配置
-# 例如: export VLLM_API_BASE="http://172.31.1.132:8000/v1"
+# 例如: export VLLM_API_BASE="http://localhost:8000/v1"
 vllm_api_key = os.getenv("VLLM_API_KEY", "EMPTY")
-vllm_api_base = os.getenv("VLLM_API_BASE", "http://172.31.1.132:8000/v1")  # 默认使用远程服务器地址
+vllm_api_base = os.getenv("VLLM_API_BASE", "http://localhost:8000/v1")
 print(f"vllm_api_base: {vllm_api_base}")
 def get_vllm_client():
     """获取vllm客户端，使用最新的配置"""
@@ -51,7 +51,7 @@ def check_vllm_service_status():
         
         # 获取可用模型列表
         try:
-            resp = requests.get("http://172.31.1.132:8000/v1/models")
+            resp = requests.get(f"{vllm_api_base}/models")
             print(resp.json())
 
             available_models = [model['id'] for model in resp.json()['data']]

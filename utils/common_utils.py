@@ -78,4 +78,3 @@ if __name__ == "__main__":
     text = """{\n  \"code\": \"\n    # 使用 BCC 结构 Ge，势函数 Ge_Zuo_JPCA2020.quadratic.snapparam\n    units metal\n    atom_style atomic\n    lattice bcc 3.96\n    region box block 0 5 0 5 0 5\n    create_box 1 box\n    create_atoms 1 box\n    mass 1 72.64\n    pair_style eam\n    pair_coeff * * potentials/Ge_Zuo_JPCA2020.quadratic.snapparam\n    velocity all create 172.0 12345\n    log lammps_run_20250708_164103_0b22/log.lammps\n    dump 1 all atom 10 lammps_run_20250708_164103_0b22/dump.lammpstrj\n    dump_modify 1 sort id\n    thermo 10\n    fix 1 all nvt temp 172.0 172.0 0.1\n    run 5000\n    \",\n  \"checkout_filename_list\": [\n    \"log.lammps\",\n    \"dump.lammpstrj\"\n  ]\n}"""
 
     print(extract_codestr_from_outputstr(text))
-    #json_to_jsonl(r"D:\mycoding\python\Lammps-GRPO\datasets\Lammps_Code_DATASET\自己生成的\test_dataset copy.json", r"D:\mycoding\python\Lammps-GRPO\datasets\Lammps_Code_DATASET\自己生成的\test_dataset copy.jsonl")

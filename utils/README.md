@@ -207,7 +207,7 @@
 **配置：**
 - OpenAI: 从环境变量 `OPENAI_API_KEY` 读取
 - Qwen: 从环境变量 `DASHSCOPE_API_KEY` 读取
-- VLLM: 从环境变量 `VLLM_API_BASE`（默认 `http://172.31.1.132:8000/v1`）和 `VLLM_API_KEY` 读取
+- VLLM: 从环境变量 `VLLM_API_BASE`（默认 `http://localhost:8000/v1`）和 `VLLM_API_KEY` 读取
 
 **使用场景：**
 - 代码生成
@@ -569,7 +569,7 @@ print_token_range(token_stats)
 1. **环境变量配置：**
    - `OPENAI_API_KEY`: OpenAI API 密钥
    - `DASHSCOPE_API_KEY`: 阿里云 Qwen API 密钥
-   - `VLLM_API_BASE`: VLLM 服务地址（默认：`http://172.31.1.132:8000/v1`）
+   - `VLLM_API_BASE`: VLLM 服务地址（默认：`http://localhost:8000/v1`）
    - `VLLM_API_KEY`: VLLM API 密钥（可选）
    - `HF_TOKEN`: HuggingFace 访问令牌
 
