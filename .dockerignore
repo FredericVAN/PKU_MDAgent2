@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.pytest_cache/
+
+# VCS
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+lammps-frontend/node_modules
+lammps-frontend/.vite
+lammps-frontend/dist
+
+# Data & outputs
+*.log
+*.lammps
+results.json
+processed_dataset/
+processed_dataset/**
+inputs_lammps/
+lammps_run_example/
+
+# Datasets (ignore large dataset folders)
+datasets/
+datasets/**
+generate_dataset/
+generate_dataset/**
+dataet_statistics/
+token_stats_plots/
+
+eval_results/
+**/*.ipynb
+**/.ipynb_checkpoints
+
+# Build
+build/
+dist/
+
+# Cache
+.cache/
+.uv/
+
+
+# Credentials
+.env
+.env*
+
