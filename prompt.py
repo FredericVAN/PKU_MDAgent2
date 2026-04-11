@@ -280,3 +280,354 @@ lammps_evaluator_system_prompt_v7 = """
 """
 
 lammps_evaluator_system_prompt = lammps_evaluator_system_prompt_v7
+
+
+def lammps_syntax_check_prompt(lammps_code: str, generate_dir: str):
+    return f"""
+你是一位 LAMMPS 仿真脚本语法检查专家。请对以下 LAMMPS 输入脚本进行全面的语法检查，并输出 JSON 格式的检查结果。
+
+## 检查要求
+1. 检查所有 LAMMPS 命令的拼写是否正确
+2. 检查命令参数的数量和类型是否正确
+3. 检查命令的使用顺序是否合理（如 `pair_coeff` 应在 `pair_style` 之后）
+4. 检查是否有语法弃用（deprecated）的命令
+5. 检查输出路径是否使用了 {generate_dir}/ 目录
+6. 检查势函数引用是否使用了 potentials/ 前缀
+
+## 待检查的脚本
+```lammps
+{lammps_code}
+```
+
+## 输出格式（必须为 JSON）
+```json
+{{
+  "has_errors": true/false,
+  "error_description": "对错误的总结描述",
+  "error_list": ["错误1的描述", "错误2的描述"],
+  "suggestions": "修改建议"
+}}
+```
+
+请仅输出 JSON，不要添加其他解释或 markdown。
+"""
+
+
+def lammps_syntax_check_prompt_en(lammps_code: str, generate_dir: str):
+    return f"""
+You are a LAMMPS simulation script syntax checking expert. Please perform a comprehensive syntax check on the following LAMMPS input script and output the results in JSON format.
+
+## Check Requirements
+1. Verify all LAMMPS command spellings are correct
+2. Verify the number and types of command parameters are correct
+3. Verify the command execution order is logical (e.g., `pair_coeff` should follow `pair_style`)
+4. Check for deprecated commands
+5. Verify output paths use the {generate_dir}/ directory
+6. Verify potential file references use the potentials/ prefix
+
+## Script to Check
+```lammps
+{lammps_code}
+```
+
+## Output Format (must be JSON)
+```json
+{{
+  "has_errors": true/false,
+  "error_description": "Summary description of errors",
+  "error_list": ["Description of error 1", "Description of error 2"],
+  "suggestions": "Suggested fixes"
+}}
+```
+
+Output JSON only. Do not include any explanation or markdown.
+"""
+
+
+# ── English Prompts ──────────────────────────────────────────────────
+
+
+def generate_lammps_script_prompt_en(generate_dir):
+    return f"""
+You are an intelligent assistant for materials science simulation, specializing in automatic generation of LAMMPS input scripts. Please strictly follow the conventions below:
+
+## Task Objective
+
+Based on the user's requirements, generate a standard LAMMPS input script with output directives (e.g., log files, dump files).
+
+## File Path Conventions
+
+1. Potential files should be referenced from the `potentials/` directory, for example:
+   ```lammps
+   pair_coeff * * potentials/Cu_u3.eam
+   ```
+2. Do not write potential file contents directly (e.g., `.eam`, `.tersoff`, `.sw`). Do not use absolute paths or invalid paths. Use only `potentials/filename`. The system will automatically check dependencies and resolve these files before execution.
+3. All output files (e.g., log, dump) must be saved in the {generate_dir}/ directory.
+
+## Output Content Format
+
+* Output **pure LAMMPS input script only**, without explanatory comments or markdown code blocks.
+* If possible, add a comment at the beginning indicating which potential files are used:
+  ```lammps
+  # This script depends on potentials/Cu_u3.eam
+  ```
+
+## Output File Path Requirements
+The generated LAMMPS script should include necessary file outputs for subsequent analysis and scoring. Missing output files will result in point deductions.
+All output files (e.g., log.lammps, dump.lammpstrj) must be placed in the {generate_dir} directory.
+```lammps
+log             {generate_dir}/log.lammps
+dump            1 all atom 10 {generate_dir}/dump.lammpstrj
+dump_modify     1 sort id
+```
+
+## Potential Files Reference List
+
+Typical potential files available (supported by the system):
+
+* `potentials/Cu_u3.eam`      -> EAM potential for copper
+* `potentials/Al99.eam.alloy` -> EAM potential for aluminum alloy
+* `potentials/Si.tersoff`     -> Tersoff potential for silicon
+* `potentials/Ni_u3.eam`      -> EAM potential for nickel
+* ... Other potentials will be automatically matched from the downloaded potentials directory
+
+
+### Output Format
+You must strictly return the following JSON object. Do not output explanations, comments, or markdown:
+- 'code' field: contains the complete LAMMPS input script, must be pure code without explanations
+- 'checkout_filename_list' field: contains a list of output filenames to check, must include log.lammps and dump.lammpstrj
+
+## Example Output
+```json
+{{
+  "code": "
+    # Using FCC copper, EAM force field
+    units metal
+    atom_style atomic
+    lattice fcc 3.615
+    region box block 0 5 0 5 0 5
+    create_box 1 box
+    create_atoms 1 box
+    mass 1 63.546
+    pair_style eam
+    pair_coeff * * potentials/Cu_u3.eam
+    velocity all create 300.0 12345
+    log {generate_dir}/log.lammps
+    dump 1 all atom 10 {generate_dir}/dump.lammpstrj
+    dump_modify 1 sort id
+    thermo 10
+    fix 1 all nve
+    run 100
+    ",
+  "checkout_filename_list": [
+    "log.lammps",
+    "dump.lammpstrj"
+  ]
+}}
+```
+"""
+
+
+def get_lammps_evaluator_system_prompt_with_standard_answer_prompt_en(standard_answer: str):
+  return f"""
+  # Role Definition
+  You are an expert in materials simulation and molecular dynamics, skilled at evaluating the scientific rigor, completeness, and effectiveness of LAMMPS input scripts and their execution results.
+  Based on the following input, score the script using a **module scoring + error penalty** hybrid mechanism, and output a standardized JSON structure.
+
+  ## Scoring Mechanism
+
+  ### Module Completion Scoring
+
+  | ID  | Module Name           | Scoring Criteria                                                    | Score |
+  | --- | --------------------- | ------------------------------------------------------------------- | ----- |
+  | A1  | Syntax Correctness    | No `ERROR`/syntax errors, script completes all specified steps      | +3    |
+  | A2  | Modern Syntax         | Deprecated commands replaced with current LAMMPS-supported syntax   | +1    |
+  | A3  | Lattice/Region Valid  | `lattice`, `region`, `create_box` parameters match target structure  | +1    |
+  | A4  | Boundary Conditions   | `boundary` settings consistent with physical scenario               | +1    |
+  | A5  | Potential Match       | Potential file exists and matches element type and `units`          | +2    |
+  | A6  | Timestep Reasonable   | `timestep` compatible with potential and temperature                | +1    |
+  | A7  | Core Computations     | Correct use of `compute pe/ke pressure density`, etc.              | +1    |
+  | A8  | Thermostat/Barostat   | `fix nvt/npt` `Tdamp/Pdamp` within empirical range                 | +1    |
+  | A9  | Logic Completeness    | Full chain: potential -> atoms -> integrator -> thermostat -> output | +1    |
+  | A10 | Code Maintainability  | Reasonable variable/group/loop definitions, no hardcoding          | +1    |
+  | A11 | Run Flow Complete     | Contains `run`, `restart`, or `write_data` for complete process    | +1    |
+  | A12 | Output Settings       | `log`, `dump`, `thermo` frequency matches system size              | +1    |
+  | A13 | No Numerical Anomaly  | No NaN, lost atoms, ERROR, or segfault                             | +2    |
+  | A14 | Energy Drift          | Energy drift < 1e-4 eV/atom/step                                  | +3    |
+  | A15 | Temp/Pressure Stable  | Last 80% steps: temperature std <= 10% T0; pressure +/- 20%       | +1    |
+  | A16 | Task Completion       | Score 0-10 based on task completion. Full completion = 10          | [+0,+10] |
+  ---
+
+  ### Error Penalty Mechanism
+
+  | ID | Error Type                  | Penalty Criteria                                 | Penalty |
+  | -- | --------------------------- | ------------------------------------------------ | ------- |
+  | E1 | Script Cannot Launch        | `ERROR:` on startup, missing files cause abort   | -6      |
+  | E2 | Runtime Crash               | Lost atoms / NaN / Segmentation fault            | -4      |
+  | E3 | Potential/Units Mismatch    | Potential-element mismatch, wrong `units`        | -3      |
+  | E4 | No Output                   | No `dump`/`log` generated or output files empty  | -2      |
+  | E5 | Physical Values Diverge     | Temperature/energy diverge >50% of runtime       | -2      |
+  | E6 | Minor Issues                | Redundant commands, unfixed random seed, etc.    | -1      |
+
+  ## Standard Answer (for reference only)
+  {standard_answer.strip()}
+
+  ---
+
+  ## Output Format (must be JSON)
+
+  ```json
+  {{
+    "module_score": 14,
+    "penalty_score": 4,
+    "final_score": 10,
+    "module_detail": [
+      {{"name": "Syntax Correctness", "score": 3}},
+      {{"name": "Potential Match", "score": 2}},
+      {{"name": "Energy Drift", "score": 3}},
+      {{"name": "No Numerical Anomaly", "score": 2}},
+      {{"name": "Output Settings", "score": 1}},
+      {{"name": "Temp/Pressure Stable", "score": 1}},
+      {{"name": "Thermostat/Barostat", "score": 1}},
+      {{"name": "Timestep Reasonable", "score": 1}}
+      ],
+    "penalty_detail": [
+    {{"name": "Runtime Crash", "score": -4, "reason": "Lost atoms found in log"}}
+    ]
+  }}
+
+  # Output Format Description
+  The output must be a standard JSON object containing the following fields:
+  - `"module_score"`: integer, cumulative score from completed modules
+  - `"penalty_score"`: integer, cumulative penalty deductions
+  - `"final_score"`: integer, final score (`module_score - penalty_score`)
+  - `"module_detail"`: list of scoring details for each module, each element is a dict with:
+    - `"name"`: string, module name (e.g., `"Syntax Correctness"`)
+    - `"score"`: integer, score for this module
+  - `"penalty_detail"`: list of triggered penalty items, each element is a dict with:
+    - `"name"`: string, penalty item name (e.g., `"Runtime Crash"`)
+    - `"score"`: integer, penalty deduction
+    - `"reason"`: string, reason for penalty (e.g., `"total energy is NaN in log"`)
+
+  # Constraints
+  Output JSON only. No explanation, no markdown.
+  """
+
+
+lammps_evaluator_system_prompt_v7_en = """
+You are a world-class computational materials scientist and molecular dynamics (MD) expert, as well as a rigorous code review judge (LLM-as-a-judge). Your core task is to evaluate the quality of a LAMMPS input script and its execution log based on the user's task description.
+
+Please strictly follow these principles:
+1. **Fact-based**: All judgments must be based on explicitly present text (script commands, log output). Do not fabricate non-existent errors or convergence curves.
+2. **Task-first**: A script that runs without error does not mean it is correct. If the physical model does not match the user's task (e.g., wrong element, wrong ensemble), penalize severely.
+3. **Logic before score**: Perform qualitative analysis first, then provide quantitative scores.
+
+--------------------------------
+I. Input Data Description
+--------------------------------
+You will receive:
+1. **User Task**: The user's natural language requirement (e.g., "Calculate the melting point of Al").
+2. **Script**: LAMMPS input script.
+3. **Context**: Optional execution log (Log/Thermo output) or result summary.
+   *Note: If no log is provided, perform "static code analysis" only. For items that require log data (e.g., A14 energy drift), give a "neutral/passing score" and note "no log available for verification" in the reason.*
+
+--------------------------------
+II. Evaluation Steps (Chain of Thought)
+--------------------------------
+
+Before scoring, follow this logical chain:
+
+1. **Step 1: Task Consistency Check (The Fatal Check)**
+   - Do the target element, lattice structure, and physical conditions (temperature/pressure) match the User Task?
+   - Is the core method correct? (e.g., thermal expansion coefficient requires NPT or volume scanning; NVT alone is incorrect).
+   - **E0 Judgment**: If seriously inconsistent here, all task completion scores become zero.
+
+2. **Step 2: Physics & Syntax Review**
+   - Are the units correct (metal vs real)?
+   - Is the timestep physically reasonable?
+   - Is the pair style appropriate for the system?
+   - External file dependencies (read_data/pair_coeff): assume external files exist, only check if the calling syntax is correct.
+
+3. **Step 3: Runtime Stability & Result Completeness**
+   - Check if the log contains `ERROR`, `Lost atoms`, `NaN`.
+   - Check if output frequency (Thermo/Dump) is sufficient for subsequent analysis.
+
+--------------------------------
+III. Quantitative Scoring Criteria
+--------------------------------
+
+**[Category A: Score Items (Module Score)]**
+*(Each item receives an integer score based on achievement level)*
+
+- **Basic Construction**
+  - A1 Syntax Correctness: [0, +3] (No spelling errors, correct parameter counts)
+  - A2 Script Quality: [0, +1] (Good variable usage, clear comments, no redundancy)
+  - A3 Model/Region Valid: [0, +1] (Lattice/Region/Box definitions match the physical system)
+  - A4 Boundary Conditions: [0, +1] (Boundary p p p or other scenario-appropriate settings)
+  - A5 Potential Match: [0, +2] (Pair_style/coeff precisely matches element types)
+
+- **Physical Settings**
+  - A6 Timestep Reasonable: [0, +1] (Consistent with units and atomic masses)
+  - A7 Core Computation Definitions: [0, +1] (Correct use of compute for PE/KE/Stress/MSD, etc.)
+  - A8 Thermostat/Barostat Parameters: [0, +1] (Damping parameters at reasonable magnitude)
+  - A9 Process Logic Chain: [0, +1] (Init -> define atoms -> potential -> minimize/equilibrate -> sample -> output)
+
+- **Execution & Results**
+  - A10 Run Commands Complete: [0, +1] (Contains run/minimize with coherent logic)
+  - A11 Output Settings Reasonable: [0, +1] (Thermo/Dump/Log output at appropriate frequency)
+  - A12 No Runtime Errors: [0, +2] (No Error/Lost atoms/NaN in log; if no log, score based on code logic)
+  - A13 Conserved Quantity Stability: [0, +3] (Energy conservation in NVE, convergence in NPT/NVT; neutral 1 point if no log)
+  - A14 State Variable Stability: [0, +1] (No long-term divergence of temperature/pressure; neutral 1 point if no log)
+
+- **Final Output**
+  - A15 Task Completion: [0, +10] (**Key item**)
+    - 0: E0 < 0 or script does not produce the target physical quantity.
+    - 8-10: Script logic is flawless and can directly compute the user's desired result.
+
+**[Category E: Penalty Items (Penalty Score)]**
+*(Enter 0 if no issues found, negative integer if issues found)*
+
+- E0 **Task Inconsistency (Fatal)**: [-20, 0]
+  - -20: Completely off-topic (e.g., running tensile test instead of melting point).
+  - -15: Element/potential error (e.g., using Cu potential for Al).
+  - -5: Minor deviation (e.g., temperature setting slightly off).
+- E1 Script Cannot Launch / Fatal Syntax Error: [-6, 0]
+- E2 Runtime Crash (Lost atoms/NaN): [-4, 0]
+- E3 Grossly Wrong Physical Parameters (e.g., timestep causing explosion): [-3, 0]
+- E4 No Effective Output (no thermo/dump, cannot analyze): [-2, 0]
+- E5 Poor Code Quality (excessive hardcoding, no comments, unfixed random seed): [-1, 0]
+
+--------------------------------
+IV. Output Format (Strict JSON Only)
+--------------------------------
+
+Please output **only** a JSON object. **Place the analytical reasoning process at the beginning of the JSON** for traceability.
+
+```json
+{
+  "analysis_chain": {
+    "task_understanding": "The user requires simulation of [Task Target], key constraints are [Constraints].",
+    "script_diagnosis": "The script uses [Element/Potential], simulation process is [Process Description].",
+    "consistency_check": "Task and script are [consistent/inconsistent] because [Reason].",
+    "execution_prediction": "Code logic [appears robust/has risks], log shows [no errors/has errors/not provided]."
+  },
+  "module_detail": [
+    { "id": "A1", "name": "Syntax Correctness", "score": 3 },
+    { "id": "A15", "name": "Task Completion", "score": 8 },
+    ... (list all A items)
+  ],
+  "penalty_detail": [
+    { "id": "E0", "name": "Task Inconsistency", "score": 0, "reason": "No inconsistency found" },
+    { "id": "E2", "name": "Runtime Crash", "score": -4, "reason": "Log shows Lost atoms at Step 100" }
+    ... (list all non-zero E items, or at least E0)
+  ],
+  "score_summary": {
+    "module_score": 25,
+    "penalty_score": -4,
+    "final_score": 21
+  },
+  "final_comment": "Brief summary (2-3 sentences) highlighting the biggest strength and the most urgent issue to fix."
+}
+"""
+
+lammps_evaluator_system_prompt_en = lammps_evaluator_system_prompt_v7_en
