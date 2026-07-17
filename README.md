@@ -91,7 +91,7 @@ No password is needed. This restores the `answer` and `answer_text` fields in-pl
 **LangGraph Version**:
 
 ```python
-from LammpsAgents_by_langgraph import run_lammps_agents
+from lammps_workflow import run_lammps_agents
 
 final_state = run_lammps_agents("Simulate the thermal expansion of copper", is_delete_dir=True)
 ```
@@ -167,6 +167,7 @@ final_state = run_lammps_agents("Simulate the thermal expansion of copper", is_d
    ```
 
    > If the run appears to hang with no output, it is almost always a missing/invalid API key for whichever provider is configured — double-check `CODE_LLM_PROVIDER`/`JUDGE_LLM_PROVIDER` in `.env` match the key you actually set (see [issue #2](https://github.com/FredericVAN/PKU_MDAgent2/issues/2)).
+   >
 6. (Optional) Install PyTorch for local models:
 
    ```bash
@@ -210,6 +211,7 @@ final_state = run_lammps_agents("Simulate the thermal expansion of copper", is_d
    ```
 
    > If the run appears to hang with no output, it is almost always a missing/invalid API key for whichever provider is configured — double-check `CODE_LLM_PROVIDER`/`JUDGE_LLM_PROVIDER` in `.env` match the key you actually set (see [issue #2](https://github.com/FredericVAN/PKU_MDAgent2/issues/2)).
+   >
 6. (Optional) Install PyTorch:
 
    ```bash
@@ -235,15 +237,30 @@ Frontend: [http://localhost:5173](http://localhost:5173) | Backend API docs: [ht
 
 ### Method 2: Docker
 
+The Docker image runs the MDAgent2 FastAPI runtime service. Despite the project's
+MD-GRPO research method, this image uses `requirements.txt` and does not start a
+GRPO training job; `requirements_grpo.txt` is reserved for the separate training
+environment.
+
 ```bash
 # Build
-docker build -t lammps-grpo:latest .
+docker build -t lammps-agent:latest .
 
 # Run
 docker run -d --restart=always -p 8000:8000 \
   --env-file .env \
-  --name lammps-grpo \
-  lammps-grpo:latest
+  --name lammps-agent \
+  lammps-agent:latest
+```
+
+On Windows PowerShell, use a single line or PowerShell's backtick (`` ` ``) for
+line continuation:
+
+```powershell
+docker run -d --restart=always -p 8000:8000 `
+  --env-file .env `
+  --name lammps-agent `
+  lammps-agent:latest
 ```
 
 > The default image uses `python:3.11-slim` without GPU/CUDA. Extend the Dockerfile if you need LAMMPS with CUDA inside the container.
@@ -273,40 +290,6 @@ dump_modify 1 sort id
 thermo 10
 fix 1 all npt temp 300.0 300.0 0.1 iso 0 0 1.0
 run 1000
-```
-
-## Directory Structure
-
-```text
-├── LammpsAgents_by_langgraph.py   # Agent workflow based on LangGraph
-├── app.py                         # FastAPI backend service
-├── prompt.py                      # System prompts for LAMMPS generation
-├── encrypt_benchmark.py           # Encode benchmark answer fields (base64)
-├── decrypt_benchmark.py           # Decode benchmark answer fields
-├── potentials/                    # LAMMPS potential files
-├── train_dataset/                 # Training datasets (examples only)
-│   ├── MD-CodeGen/
-│   ├── MD-InstructQA/
-│   └── MD-Knowledge/
-├── MD_Benchmark/                  # Evaluation benchmark
-│   ├── ZH/                       # Chinese version
-│   │   ├── Code_Eval/
-│   │   └── QA_Eval/
-│   └── EN/                       # English version
-│       ├── Code_Eval/
-│       └── QA_Eval/
-├── utils/                         # Utilities and APIs
-├── lammps-frontend/               # Vue3 frontend
-├── lammps_run_example/            # Example LAMMPS outputs
-├── pics/                          # Figures
-├── demo_video/                    # Demo video
-├── requirements.txt               # Python dependencies
-├── requirements_grpo.txt          # GRPO training dependencies
-├── Dockerfile                     # Docker configuration
-├── .env-EXAMPLE                   # Environment variables template
-├── README.md                      # Documentation (English)
-├── README_CN.md                   # Documentation (Chinese)
-└── LICENSE                        # License
 ```
 
 ## Citation

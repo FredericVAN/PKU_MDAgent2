@@ -20,7 +20,7 @@ registry, just a name -> callable lookup.
 
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import json_repair
 
@@ -45,6 +45,20 @@ class AgentSession:
     reward: float = 0
     finished: bool = False
     finish_summary: str = ""
+    # Filenames the agent itself created via write_file - used to tell input
+    # files (the script) apart from output files (log/dump, produced by
+    # actually running LAMMPS) without guessing from naming conventions.
+    written_files: set = field(default_factory=set)
+
+
+def classify_files(session: "AgentSession") -> tuple:
+    """Split the sandbox's current file listing into (input_files,
+    output_files): input = written by the agent via write_file, output =
+    everything else (i.e. produced by run_shell_command)."""
+    all_files = set(os.listdir(session.generate_dir))
+    input_files = sorted(all_files & session.written_files)
+    output_files = sorted(all_files - session.written_files)
+    return input_files, output_files
 
 
 def _truncate(text: str, max_chars: int = MAX_FILE_CHARS) -> str:
@@ -203,6 +217,7 @@ def build_tool_functions(session: AgentSession, judge_llm) -> dict:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
+        session.written_files.add(filename)
         return f"Wrote {len(content)} characters to {filename}."
 
     def read_file(filename: str) -> str:

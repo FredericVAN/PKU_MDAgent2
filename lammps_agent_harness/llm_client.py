@@ -18,7 +18,7 @@ load_dotenv()
 # provider -> (default base_url, api_key env var or None if no key needed)
 _PROVIDER_DEFAULTS = {
     "dashscope": ("https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
-    "tongyi": ("https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),  # alias, matches LammpsAgents_by_langgraph.py's provider name
+    "tongyi": ("https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),  # alias, matches lammps_workflow's provider name
     "openai": ("https://api.openai.com/v1", "OPENAI_API_KEY"),
     "ollama": ("http://localhost:11434/v1", None),
 }
@@ -63,7 +63,7 @@ class LLMClient:
 def build_llm(role: str) -> LLMClient:
     """role: 'code' or 'judge'. Reads CODE_LLM_PROVIDER/CODE_LLM_MODEL or
     JUDGE_LLM_PROVIDER/JUDGE_LLM_MODEL - the same env vars
-    LammpsAgents_by_langgraph.py uses - so both versions share one config
+    lammps_workflow uses - so both versions share one config
     story even though this one never imports LangChain."""
     prefix = "CODE" if role == "code" else "JUDGE"
     default_model = "qwen3-8b" if role == "code" else "qwen-flash"

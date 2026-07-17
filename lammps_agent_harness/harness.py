@@ -1,4 +1,4 @@
-"""Agent-harness rewrite of LammpsAgents_by_langgraph.py - framework-free.
+"""Agent-harness rewrite of the lammps_workflow package - framework-free.
 
 The original module encodes the whole workflow as a fixed LangGraph
 StateGraph: node_init -> node_generate -> node_check_potentials ->
@@ -19,16 +19,25 @@ model decides the order of operations and when to stop (by calling the
 `finish` tool); the harness only enforces a hard step budget as a safety
 net. Nothing about the original file is touched - this is a standalone dev
 version living in its own package.
+
+Recommended default config (see .env / .env-EXAMPLE):
+    CODE_LLM_PROVIDER=tongyi
+    CODE_LLM_MODEL=qwen3.6-flash
+    JUDGE_LLM_PROVIDER=tongyi
+    JUDGE_LLM_MODEL=qwen3.5-flash
+See lammps_agent_harness/README.md for why.
 """
 
 import json
 import os
 import shutil
+import sys
 
 from lammps_agent_harness.context import estimate_tokens, summarize_and_compact
 from lammps_agent_harness.llm_client import build_llm
 from lammps_agent_harness.prompts import build_system_prompt
-from lammps_agent_harness.tools import TOOL_SCHEMAS, AgentSession, build_tool_functions
+from lammps_agent_harness.recorder import save_run
+from lammps_agent_harness.tools import TOOL_SCHEMAS, AgentSession, build_tool_functions, classify_files
 from utils.common_utils import generate_random_dirname
 from utils.log_utils import log_to_file
 
@@ -43,7 +52,15 @@ KEEP_LAST_TURNS = 2
 
 
 def log(msg: str) -> None:
-    print(msg)
+    # The model's own (often Chinese) output can contain characters the
+    # console's active codepage can't render (e.g. GBK on zh-CN Windows) -
+    # print() would raise and kill the whole run over a display issue. The
+    # log file is always UTF-8 and gets the exact text regardless.
+    try:
+        print(msg)
+    except UnicodeEncodeError:
+        encoding = sys.stdout.encoding or "utf-8"
+        print(msg.encode(encoding, errors="replace").decode(encoding, errors="replace"))
     log_to_file(msg, LOG_FILE)
 
 
@@ -82,78 +99,10 @@ def _dispatch(tool_functions: dict, name: str, args_json: str) -> str:
         return f"Tool '{name}' raised an error: {e}"
 
 
-def run_lammps_agent(user_input: str, is_delete_dir: bool = False, max_steps: int = MAX_STEPS) -> AgentSession:
-    """Run the tool-calling agent loop for one task and return the final session state."""
-    session = _new_session(user_input)
-    code_llm = build_llm("code")
-    judge_llm = build_llm("judge")
-    tool_functions = build_tool_functions(session, judge_llm)
-
-    messages = [
-        {"role": "system", "content": build_system_prompt(session.generate_dir)},
-        {"role": "user", "content": user_input},
-    ]
-
-    for step in range(1, max_steps + 1):
-        log(f"--- step {step}/{max_steps} ---")
-        msg = code_llm.chat(messages, tools=TOOL_SCHEMAS)
-        messages.append(msg.model_dump(exclude_none=True))
-
-        if msg.content:
-            log(f"[assistant] {msg.content}")
-
-        if not msg.tool_calls:
-            log("Model responded without calling a tool; stopping.")
-            break
-
-        for call in msg.tool_calls:
-            result = _dispatch(tool_functions, call.function.name, call.function.arguments)
-            log(f"[tool call] {call.function.name}({call.function.arguments}) -> {result}")
-            messages.append({"role": "tool", "tool_call_id": call.id, "content": str(result)})
-
-        if session.finished:
-            log(f"Agent called finish(): {session.finish_summary}")
-            break
-
-        messages, compact_event = _compact(messages, judge_llm)
-        if compact_event:
-            log(f"[context] {compact_event}")
-    else:
-        session.finish_summary = session.finish_summary or "Step budget exhausted without an explicit finish() call."
-        log(session.finish_summary)
-
-    if is_delete_dir:
-        shutil.rmtree(session.generate_dir, ignore_errors=True)
-
-    return session
-
-
-def run_lammps_agent_stream(user_input: str, max_steps: int = MAX_STEPS):
-    """Generator variant of run_lammps_agent: yields one event dict per model
-    turn / tool call, in the same spirit as
-    LammpsAgents_by_langgraph.workflow.stream(), so this harness can be
-    dropped into app.py's streaming endpoint later without redesigning the
-    event shape from scratch."""
-    session = _new_session(user_input)
-    code_llm = build_llm("code")
-    judge_llm = build_llm("judge")
-    tool_functions = build_tool_functions(session, judge_llm)
-
-    messages = [
-        {"role": "system", "content": build_system_prompt(session.generate_dir)},
-        {"role": "user", "content": user_input},
-    ]
-
-    def session_snapshot() -> dict:
-        return {
-            "files": os.listdir(session.generate_dir),
-            "eval_result": session.eval_result,
-            "final_score": session.final_score,
-            "reward": session.reward,
-            "generate_dir": session.generate_dir,
-            "abs_generate_dir": session.abs_generate_dir,
-        }
-
+def _agent_loop(session, messages, tool_functions, code_llm, judge_llm, max_steps):
+    """Shared core loop, used by both run_lammps_agent (collects + saves the
+    result) and run_lammps_agent_stream (yields events live). `messages` is
+    mutated in place so the caller retains the final transcript."""
     for step in range(1, max_steps + 1):
         msg = code_llm.chat(messages, tools=TOOL_SCHEMAS)
         messages.append(msg.model_dump(exclude_none=True))
@@ -168,24 +117,107 @@ def run_lammps_agent_stream(user_input: str, max_steps: int = MAX_STEPS):
         for call in msg.tool_calls:
             result = _dispatch(tool_functions, call.function.name, call.function.arguments)
             messages.append({"role": "tool", "tool_call_id": call.id, "content": str(result)})
+            input_files, output_files = classify_files(session)
             yield {
                 "type": "tool_call",
                 "step": step,
                 "tool": call.function.name,
                 "args": call.function.arguments,
                 "result": str(result),
-                "state": session_snapshot(),
+                "state": {
+                    "input_files": input_files,
+                    "output_files": output_files,
+                    "eval_result": session.eval_result,
+                    "final_score": session.final_score,
+                    "reward": session.reward,
+                    "generate_dir": session.generate_dir,
+                    "abs_generate_dir": session.abs_generate_dir,
+                },
             }
 
         if session.finished:
             yield {"type": "done", "step": step, "reason": session.finish_summary}
             return
 
-        messages, compact_event = _compact(messages, judge_llm)
+        messages[:], compact_event = _compact(messages, judge_llm)
         if compact_event:
             yield {"type": "context_compacted", "step": step, "reason": compact_event}
 
     yield {"type": "done", "step": max_steps, "reason": "step budget exhausted"}
+
+
+def _log_event(event: dict) -> None:
+    """Render a stream event the same way the old print/log_to_file calls did."""
+    if event["type"] == "assistant" and event.get("message"):
+        log(f"[assistant] {event['message']}")
+    elif event["type"] == "tool_call":
+        log(f"[tool call] {event['tool']}({event['args']}) -> {event['result']}")
+    elif event["type"] == "context_compacted":
+        log(f"[context] {event['reason']}")
+    elif event["type"] == "done":
+        log(f"[done] {event['reason']}")
+
+
+def run_lammps_agent(
+    user_input: str,
+    is_delete_dir: bool = False,
+    max_steps: int = MAX_STEPS,
+    save_results: bool = True,
+) -> AgentSession:
+    """Run the tool-calling agent loop for one task and return the final
+    session state. If save_results, the full trajectory (raw messages), a
+    human-readable trace, and a short result summary are written under
+    lammps_agent_harness_runs/<run_id>/ - see recorder.py."""
+    session = _new_session(user_input)
+    code_llm = build_llm("code")
+    judge_llm = build_llm("judge")
+    tool_functions = build_tool_functions(session, judge_llm)
+
+    messages = [
+        {"role": "system", "content": build_system_prompt(session.generate_dir)},
+        {"role": "user", "content": user_input},
+    ]
+
+    run_id = os.path.basename(session.generate_dir)
+    events = []
+    log(f"=== run {run_id}: {user_input} ===")
+    current_step = None
+    for event in _agent_loop(session, messages, tool_functions, code_llm, judge_llm, max_steps):
+        events.append(event)
+        if event["type"] != "done" and event["step"] != current_step:
+            current_step = event["step"]
+            log(f"--- step {current_step}/{max_steps} ---")
+        _log_event(event)
+
+    if save_results:
+        run_dir = save_run(run_id, user_input, messages, events, session)
+        log(f"[record] saved run trajectory + trace to {run_dir}")
+
+    if is_delete_dir:
+        shutil.rmtree(session.generate_dir, ignore_errors=True)
+
+    return session
+
+
+def run_lammps_agent_stream(user_input: str, max_steps: int = MAX_STEPS):
+    """Generator variant of run_lammps_agent: yields one event dict per model
+    turn / tool call, in the same spirit as
+    lammps_workflow.workflow.stream(), so this harness can be
+    dropped into app.py's streaming endpoint later without redesigning the
+    event shape from scratch. Does not save a trajectory itself - callers
+    that want persistence should collect the yielded events and call
+    recorder.save_run(), as run_lammps_agent does."""
+    session = _new_session(user_input)
+    code_llm = build_llm("code")
+    judge_llm = build_llm("judge")
+    tool_functions = build_tool_functions(session, judge_llm)
+
+    messages = [
+        {"role": "system", "content": build_system_prompt(session.generate_dir)},
+        {"role": "user", "content": user_input},
+    ]
+
+    yield from _agent_loop(session, messages, tool_functions, code_llm, judge_llm, max_steps)
 
 
 if __name__ == "__main__":
@@ -195,6 +227,6 @@ if __name__ == "__main__":
         "change data."
     )
     final_session = run_lammps_agent(test_task, is_delete_dir=False)
-    print("finished:", final_session.finished, "| summary:", final_session.finish_summary)
-    print("final_score:", final_session.final_score, "| reward:", final_session.reward)
-    print("generate_dir:", final_session.generate_dir)
+    log(f"finished: {final_session.finished} | summary: {final_session.finish_summary}")
+    log(f"final_score: {final_session.final_score} | reward: {final_session.reward}")
+    log(f"generate_dir: {final_session.generate_dir}")
