@@ -1,29 +1,41 @@
+import datetime
+import json
 import os
+import shutil
+from typing import Annotated
+
+import json_repair
 from dotenv import load_dotenv
+from tqdm import tqdm
+from typing_extensions import TypedDict
+
+from langchain_core.messages import AIMessage
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.errors import GraphRecursionError
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
+
+from prompt import (
+    generate_lammps_script_prompt,
+    lammps_evaluator_system_prompt,
+    lammps_syntax_check_prompt,
+)
+from utils.common_utils import (
+    cal_reward,
+    extract_codestr_from_outputstr,
+    extract_jsonstr_from_outputstr,
+    generate_random_dirname,
+)
+from utils.lammps_check_systax_tools import check_can_run_lammps
 from utils.lammps_potential_tools import check_lammps_potentials_tool
 from utils.lammps_run_tools import run_lammps_in_process
-from prompt import lammps_evaluator_system_prompt, generate_lammps_script_prompt, lammps_syntax_check_prompt
-from utils.lammps_potential_utils.lammps_potential_api import check_lammps_potentials, get_similar_potentials_recommendation
-from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.memory import MemorySaver
 from utils.log_utils import log_to_file
-import json
-import json_repair
-from utils.common_utils import extract_jsonstr_from_outputstr, extract_codestr_from_outputstr, generate_random_dirname,cal_reward
-import csv
-import os
+
 # os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
-from langgraph.graph import START
-import shutil
-from langchain_core.messages import AnyMessage, HumanMessage, AIMessage
-from tqdm import tqdm
-import datetime
-from utils.lammps_check_systax_tools import check_can_run_lammps
-# Load environment variables
 load_dotenv()
 
 
-def get_chat_llm(provider:str="ollama",model_name:str="qwen3:8b"):
+def get_chat_llm(provider: str = "ollama", model_name: str = "qwen3:8b"):
     if provider == "ollama":
         from langchain_ollama import ChatOllama
         llm = ChatOllama(
@@ -48,9 +60,9 @@ def get_chat_llm(provider:str="ollama",model_name:str="qwen3:8b"):
             print("Error: Please create a .env file in the working directory and set OPENAI_API_KEY.")
             exit()
         llm_kwargs = {"model": model_name, "api_key": api_key}
-        llm = ChatOpenAI(
-            **llm_kwargs
-        )
+        if api_base:
+            llm_kwargs["base_url"] = api_base
+        llm = ChatOpenAI(**llm_kwargs)
     elif provider == "tongyi":
         from langchain_community.chat_models.tongyi import ChatTongyi
         llm = ChatTongyi(
@@ -61,16 +73,33 @@ def get_chat_llm(provider:str="ollama",model_name:str="qwen3:8b"):
         raise ValueError(f"Unsupported provider: {provider}")
     return llm
 
-AVAILABLE_PROVIDERS = {"ollama":["qwen3:8b"], "huggingface":["Qwen/Qwen3-8B"], "openai":["gpt-4-turbo","o4-mini"], "tongyi":["qwen3-8b","qwen3-14b","qwen3-32b","qwen-turbo-2025-02-11"]}
-code_llm = get_chat_llm("tongyi","qwen3-8b")
-judge_llm = get_chat_llm("tongyi","qwen-flash")
+
+AVAILABLE_PROVIDERS = {
+    "ollama": ["qwen3:8b"],
+    "huggingface": ["Qwen/Qwen3-8B"],
+    "openai": ["gpt-4-turbo", "o4-mini"],
+    "tongyi": ["qwen3-8b", "qwen3-14b", "qwen3-32b", "qwen-turbo-2025-02-11"],
+}
+
+# Provider/model are configurable via env vars so alternative OpenAI-compatible
+# endpoints (e.g. Moonshot/Kimi via OPENAI_API_BASE) can be used without editing code.
+CODE_LLM_PROVIDER = os.getenv("CODE_LLM_PROVIDER", "tongyi")
+CODE_LLM_MODEL = os.getenv("CODE_LLM_MODEL", "qwen3-8b")
+JUDGE_LLM_PROVIDER = os.getenv("JUDGE_LLM_PROVIDER", "tongyi")
+JUDGE_LLM_MODEL = os.getenv("JUDGE_LLM_MODEL", "qwen-flash")
+code_llm = get_chat_llm(CODE_LLM_PROVIDER, CODE_LLM_MODEL)
+judge_llm = get_chat_llm(JUDGE_LLM_PROVIDER, JUDGE_LLM_MODEL)
 
 CHECK_SYNTAX_METHOD = "TOOL"
 LOG_FILE = "lammps.log"
-from typing import Annotated
-from typing_extensions import TypedDict
-from langchain_core.messages import AnyMessage,HumanMessage
-from langgraph.graph.message import add_messages
+
+
+def log(msg: str) -> None:
+    """Print to console and append the same message to LOG_FILE."""
+    print(msg)
+    log_to_file(msg, LOG_FILE)
+
+
 class LammpsState(TypedDict):
     """
     State dictionary containing:
@@ -87,23 +116,24 @@ class LammpsState(TypedDict):
     run_result: str
     eval_result: str
     final_score: int
-    reward:float
     generate_time: int
     generate_dir: str
     llm_name: str
     abs_generate_dir: str
     penalty_detail: str
-    reward :float
+    reward: float
     potential_check_message: str  # Potential file check result
-    potential_all_ready: bool    # Whether all potential files are ready
+    potential_all_ready: bool     # Whether all potential files are ready
     syntax_check_result: str      # Syntax check result
-    syntax_errors: str           # Syntax error details
-    last_node_source: str        # Previous node source
-    is_can_run: bool             # Whether the script can run
+    syntax_errors: str            # Syntax error details
+    last_node_source: str         # Previous node source
+    is_can_run: bool              # Whether the script can run
+
 
 MAX_GENERATE_CODE_TIME = 5
 MAX_RECURSION_LIMIT = 30
-PASS_REWARD = 1 # Range: 0~1
+PASS_REWARD = 1  # Range: 0~1
+
 
 def node_init(state: LammpsState):
     generate_dir = generate_random_dirname()
@@ -133,8 +163,7 @@ def node_generate(state: LammpsState):
     lammps_code = state.get("lammps_code", "")
     penalty_detail = state.get("penalty_detail", "")
     eval_result = state.get("eval_result", "")
-    print(f"Generate node - previous node source: {last_node_source}")
-    log_to_file(f"Generate node - previous node source: {last_node_source}", LOG_FILE)
+    log(f"Generate node - previous node source: {last_node_source}")
 
     if last_node_source == "init":
         # First generation: from init node, generate from scratch
@@ -227,8 +256,7 @@ def node_generate(state: LammpsState):
     # Set current node source for the next node
     state["last_node_source"] = "generate"
 
-    print("Code generation complete")
-    log_to_file("Code generation complete", LOG_FILE)
+    log("Code generation complete")
     return state
 
 # Node 1.2: Check syntax errors
@@ -242,14 +270,13 @@ def node_check_syntax(state: LammpsState):
     generate_dir = state.get("generate_dir", "")
     lammps_code = state.get("lammps_code", "")
     if not lammps_code:
-        print("No LAMMPS code to check")
-        log_to_file("No LAMMPS code to check", LOG_FILE)
+        log("No LAMMPS code to check")
         state["syntax_check_result"] = "No LAMMPS code to check"
         state["syntax_errors"] = ""
         return state
 
     if CHECK_SYNTAX_METHOD == "TOOL":
-        ok,info = check_can_run_lammps(lammps_code)
+        ok, info = check_can_run_lammps(lammps_code)
         if ok:
             state["syntax_check_result"] = True
             state["syntax_errors"] = "Syntax check passed, no errors found"
@@ -277,8 +304,7 @@ def node_check_syntax(state: LammpsState):
                 suggestions = syntax_json.get("suggestions", "")
 
                 if has_errors:
-                    print(f"Syntax errors found: {error_description}")
-                    log_to_file(f"Syntax errors found: {error_description}", LOG_FILE)
+                    log(f"Syntax errors found: {error_description}")
 
                     # Build detailed error information
                     error_details = f"""
@@ -295,8 +321,7 @@ def node_check_syntax(state: LammpsState):
                     state["messages"].append(AIMessage(content=f"Syntax check result: {error_details}"))
 
                 else:
-                    print("Syntax check passed, no errors found")
-                    log_to_file("Syntax check passed, no errors found", LOG_FILE)
+                    log("Syntax check passed, no errors found")
                     state["syntax_check_result"] = True
                     state["syntax_errors"] = ""
 
@@ -305,8 +330,7 @@ def node_check_syntax(state: LammpsState):
                     state["messages"].append(AIMessage(content=check_message))
 
             except Exception as parse_error:
-                print(f"Syntax check response parse failed: {parse_error}")
-                log_to_file(f"Syntax check response parse failed: {parse_error}", LOG_FILE)
+                log(f"Syntax check response parse failed: {parse_error}")
                 state["syntax_check_result"] = False
                 state["syntax_errors"] = f"Syntax check response parse failed: {str(parse_error)}"
 
@@ -314,8 +338,7 @@ def node_check_syntax(state: LammpsState):
                 state["messages"].append(AIMessage(content=f"Syntax check raw response: {syntax_content}"))
 
         except Exception as e:
-            print(f"Syntax check failed: {e}")
-            log_to_file(f"Syntax check failed: {e}", LOG_FILE)
+            log(f"Syntax check failed: {e}")
             state["syntax_check_result"] = False
             state["syntax_errors"] = f"Syntax check failed: {str(e)}"
             state["messages"].append(AIMessage(content=f"Syntax check failed: {str(e)}"))
@@ -323,8 +346,7 @@ def node_check_syntax(state: LammpsState):
     # Set current node source for the next node
     state["last_node_source"] = "check_syntax"
 
-    print("Syntax check complete")
-    log_to_file("Syntax check complete", LOG_FILE)
+    log("Syntax check complete")
     return state
 
 # Node 1.5: Check potential file dependencies
@@ -349,30 +371,26 @@ def node_check_potentials(state: LammpsState):
         potential_check_message = f"Potential file check result: {potential_result['message']}"
         state["potential_all_ready"] = potential_all_ready
         state["potential_check_message"] = potential_check_message
-        print(potential_check_message)
-        log_to_file(potential_check_message, LOG_FILE)
+        log(potential_check_message)
         # Add potential check result to message history
         state["messages"].append(AIMessage(content=potential_check_message))
 
     except Exception as e:
         potential_check_message = f"Potential file check tool error: {e}"
         state["potential_check_message"] = potential_check_message
-        print(potential_check_message)
-        log_to_file(potential_check_message, LOG_FILE)
+        log(potential_check_message)
         state["messages"].append(AIMessage(content=potential_check_message))
 
     # Set current node source for the next node
     state["last_node_source"] = "check_potentials"
 
-    print("Potential file check complete")
-    log_to_file("Potential file check complete", LOG_FILE)
+    log("Potential file check complete")
     return state
 
 # Node 2: Run LAMMPS script
 def node_run(state: LammpsState):
     code = state.get("lammps_code", "")
-    print("--- Running code ---")
-    log_to_file("--- Running code ---",LOG_FILE)
+    log("--- Running code ---")
     result = run_lammps_in_process(code, tmpdir=state["generate_dir"], checkout_filename_list=state["checkout_filename_list"])
     state["run_result"] = result
     state["messages"].append(AIMessage(content=str(result)))
@@ -381,8 +399,7 @@ def node_run(state: LammpsState):
     # Set current node source for the next node
     state["last_node_source"] = "run"
 
-    print("Code execution complete")
-    log_to_file("Code execution complete", LOG_FILE)
+    log("Code execution complete")
     return state
 
 
@@ -428,11 +445,11 @@ def node_eval(state: LammpsState):
         state["eval_result"] = content
         state["messages"].append(AIMessage(content=eval_msg.content.strip()))
         score_obj = json.loads(content)
-        state['penalty_detail'] = str(score_obj.get("penalty_detail", ""))
+        state["penalty_detail"] = str(score_obj.get("penalty_detail", ""))
         state["final_score"] = score_obj.get("final_score", 0)
         module_score = score_obj.get("module_score", 0)
         penalty_score = score_obj.get("penalty_score", 0)
-        reward = cal_reward(module_score,penalty_score)
+        reward = cal_reward(module_score, penalty_score)
         state["reward"] = reward
 
     except Exception:
@@ -453,7 +470,7 @@ def decide_syntax_next(state: LammpsState):
     Decide the next step after syntax check.
     """
     syntax_errors = state.get("syntax_errors", "")
-    syntax_check_result = state.get("syntax_check_result", True) # True = passed, False = failed
+    syntax_check_result = state.get("syntax_check_result", True)  # True = passed, False = failed
 
     # Check iteration limit
     if state.get("generate_time", 1) >= MAX_GENERATE_CODE_TIME:
@@ -517,7 +534,7 @@ def decide_next(state: LammpsState):
     state["messages"].append(AIMessage(content=f"Iteration {state['generate_time']}: code did not reach passing score, continuing generation"))
     return "generate"
 
-from langgraph.errors import GraphRecursionError
+
 # Build LangGraph workflow
 graph = StateGraph(LammpsState)
 graph.add_edge(START, "init")
@@ -534,15 +551,16 @@ graph.add_conditional_edges("check_syntax", decide_syntax_next, {"generate": "ge
 graph.add_conditional_edges("check_potentials", decide_potentials_next, {"generate": "generate", "check_syntax": "check_syntax", END: END})
 graph.add_edge("run", "eval")
 graph.add_conditional_edges("eval", decide_next, {"generate": "generate", END: END})
-# graph.set_entry_point("init")
 workflow = graph.compile(checkpointer=MemorySaver())
-def run_lammps_agents(user_input:str, is_delete_dir:bool=False) -> LammpsState:
-    '''
+
+
+def run_lammps_agents(user_input: str, is_delete_dir: bool = False) -> LammpsState:
+    """
     Run LAMMPS agents workflow.
     :param user_input: user input
     :param is_delete_dir: whether to delete temporary directory
     :return: LammpsState
-    '''
+    """
     final_state = None
     config = {
         "recursion_limit": MAX_RECURSION_LIMIT,
@@ -563,15 +581,12 @@ def run_lammps_agents(user_input:str, is_delete_dir:bool=False) -> LammpsState:
                 final_state = value
                 generate_time = final_state.get("generate_time", 0)
                 msg = f"[{timestamp}] ---------generate_time {generate_time} --- NODE '{key}': ---------\n{value['messages'][-1].content}\n--------------------------------"
-                print(msg)
-                log_to_file(msg, "lammps.log")
+                log(msg)
         print("Workflow finished")
     except GraphRecursionError as e:
-        print(f"Recursion limit exceeded, workflow forcefully terminated: {e}")
-        log_to_file(f"Recursion limit exceeded, workflow forcefully terminated: {e}", "lammps.log")
+        log(f"Recursion limit exceeded, workflow forcefully terminated: {e}")
     except Exception as e:
-        print(f"Exception during execution: {e}")
-        log_to_file(f"Exception during execution: {e}", "lammps.log")
+        log(f"Exception during execution: {e}")
     finally:
         if is_delete_dir and final_state is not None:
             generate_dir = final_state.get("generate_dir", None)
@@ -579,12 +594,9 @@ def run_lammps_agents(user_input:str, is_delete_dir:bool=False) -> LammpsState:
                 shutil.rmtree(generate_dir, ignore_errors=True)
     return final_state
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     # Read JSON file as test cases
-    import os
-    from tqdm import tqdm
-    import json
 
     # Specify starting index for processing
     input_dataset_file = r""
@@ -609,8 +621,7 @@ if __name__ == "__main__":
 
         # Check if final_state is valid
         if final_state is None:
-            print(f"Warning: final_state is None (index: {real_idx}), skipping save")
-            log_to_file(f"Warning: final_state is None (index: {real_idx}), skipping save", LOG_FILE)
+            log(f"Warning: final_state is None (index: {real_idx}), skipping save")
             continue
 
         # Build result data
@@ -637,7 +648,6 @@ if __name__ == "__main__":
                 jf.write(json.dumps(result, ensure_ascii=False) + "\n")
             print(f"Result appended to file: {jsonl_file} (index: {real_idx})")
         except Exception as e:
-            print(f"Failed to save result (index: {real_idx}): {e}")
-            log_to_file(f"Failed to save result (index: {real_idx}): {e}", LOG_FILE)
+            log(f"Failed to save result (index: {real_idx}): {e}")
 
     print(f"All results saved to: {jsonl_file}")

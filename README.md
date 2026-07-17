@@ -10,13 +10,9 @@
 [![Leaderboard](https://img.shields.io/badge/%F0%9F%8F%86%20Leaderboard-MD--Benchmark-orange)](https://huggingface.co/spaces/PKU-JX-LAB/Molecular-Dynamics-Benchmark)
 [![Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-MD--EvalBench-yellow)](https://huggingface.co/datasets/FredericFan/MD-EvalBench)
 
-[中文版](README_CN.md)
-
 ## News
 
-- **[2026-04-11]** Code and partial benchmark released. Welcome to try it out!
-
-> **Note:** Full code and complete benchmark will be released upon paper acceptance.
+> **Note:** Due to our future research and commercialization plans and related regulations, we have decided that the full code and complete benchmark will be released upon paper acceptance. At this stage, only partial code and a demo are available.
 
 ## Introduction
 
@@ -113,13 +109,11 @@ final_state = run_lammps_agents("Simulate the thermal expansion of copper", is_d
 #### Linux (Recommended)
 
 1. Python 3.11 recommended (preferably via conda)
-
 2. Install CUDA:
 
    ```bash
    conda install cudatoolkit cuda-version=11
    ```
-
 3. Install LAMMPS:
 
    - **Option A** — conda (simple but limited):
@@ -128,7 +122,6 @@ final_state = run_lammps_agents("Simulate the thermal expansion of copper", is_d
      conda install lammps -c conda-forge
      conda install openkim-models -c conda-forge
      ```
-
    - **Option B** — Build from source (full control):
 
      ```bash
@@ -146,21 +139,34 @@ final_state = run_lammps_agents("Simulate the thermal expansion of copper", is_d
        -DPKG_MANYBODY=ON
      make -j$(nproc)
      ```
-
 4. Install Python dependencies:
 
    ```bash
    pip install uv
    uv pip install -r requirements.txt
    ```
-
 5. Configure environment variables:
 
    ```bash
    cp .env-EXAMPLE .env
-   # Edit .env and set OPENAI_API_KEY=...
    ```
 
+   By default the agents use Alibaba **Tongyi/DashScope** models (`CODE_LLM_PROVIDER=tongyi`, model `qwen3-8b`/`qwen-flash`), so at minimum set:
+
+   ```bash
+   DASHSCOPE_API_KEY=<your DashScope API key>
+   ```
+
+   To use an OpenAI-compatible endpoint instead (OpenAI itself, Moonshot/Kimi, DeepSeek, etc.), switch the provider and point it at that endpoint, e.g.:
+
+   ```bash
+   CODE_LLM_PROVIDER=openai
+   CODE_LLM_MODEL=kimi-k2-0711-preview
+   OPENAI_API_KEY=<your API key>
+   OPENAI_API_BASE=https://api.moonshot.cn/v1
+   ```
+
+   > If the run appears to hang with no output, it is almost always a missing/invalid API key for whichever provider is configured — double-check `CODE_LLM_PROVIDER`/`JUDGE_LLM_PROVIDER` in `.env` match the key you actually set (see [issue #2](https://github.com/FredericVAN/PKU_MDAgent2/issues/2)).
 6. (Optional) Install PyTorch for local models:
 
    ```bash
@@ -170,29 +176,40 @@ final_state = run_lammps_agents("Simulate the thermal expansion of copper", is_d
 #### Windows
 
 1. Python 3.11 recommended (preferably via conda)
-
 2. Install CUDA:
 
    ```bash
    conda install cudatoolkit cuda-version=11
    ```
-
 3. Install LAMMPS following the [official guide](https://docs.lammps.org/Install.html)
-
 4. Install Python dependencies:
 
    ```bash
    pip install uv
    uv pip install -r requirements.txt
    ```
-
 5. Configure environment variables:
 
    ```bash
    cp .env-EXAMPLE .env
-   # Edit .env and set OPENAI_API_KEY=...
    ```
 
+   By default the agents use Alibaba **Tongyi/DashScope** models (`CODE_LLM_PROVIDER=tongyi`, model `qwen3-8b`/`qwen-flash`), so at minimum set:
+
+   ```bash
+   DASHSCOPE_API_KEY=<your DashScope API key>
+   ```
+
+   To use an OpenAI-compatible endpoint instead (OpenAI itself, Moonshot/Kimi, DeepSeek, etc.), switch the provider and point it at that endpoint, e.g.:
+
+   ```bash
+   CODE_LLM_PROVIDER=openai
+   CODE_LLM_MODEL=kimi-k2-0711-preview
+   OPENAI_API_KEY=<your API key>
+   OPENAI_API_BASE=https://api.moonshot.cn/v1
+   ```
+
+   > If the run appears to hang with no output, it is almost always a missing/invalid API key for whichever provider is configured — double-check `CODE_LLM_PROVIDER`/`JUDGE_LLM_PROVIDER` in `.env` match the key you actually set (see [issue #2](https://github.com/FredericVAN/PKU_MDAgent2/issues/2)).
 6. (Optional) Install PyTorch:
 
    ```bash
@@ -214,7 +231,7 @@ npm install
 npm run dev
 ```
 
-Frontend: <http://localhost:5173> | Backend API docs: <http://localhost:8000/docs>
+Frontend: [http://localhost:5173](http://localhost:5173) | Backend API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ### Method 2: Docker
 
