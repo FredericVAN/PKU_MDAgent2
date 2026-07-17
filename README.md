@@ -12,7 +12,7 @@
 
 ## News
 
-> **Note:** Due to our future research and commercialization plans and related regulations, we have decided that the full code and complete benchmark will be released upon paper acceptance. At this stage, only partial code and a demo are available.
+> **Note:** Due to our future research and commercialization plans and related regulations, we have decided not to release the full code and complete benchmark before paper acceptance. At this stage, only partial code and a demo are available.
 
 ## Introduction
 
